@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Expense Tracker Complete Infrastructure'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: 'dev'
+    AllowedValues: ['dev', 'staging', 'prod']
+  
+  KeyPairName:
+    Type: String
+    Default: 'expense-tracker-key'
+    Description: 'EC2 Key Pair for SSH access'
+
+Resources:
+  # S3 Bucket for Frontend
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'expense-tracker-${Environment}-${AWS::AccountId}'
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  # DynamoDB Table
+  ExpenseTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'ExpenseTracker-${Environment}'
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: expenseId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: expenseId
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+
+  # Lambda Execution Role
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'ExpenseTrackerLambdaRole-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/AmazonSNSFullAccess
+
+  # SNS Topic
+  ExpenseNotificationsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub 'ExpenseNotifications-${Environment}'
+      DisplayName: 'Expense Tracker Notifications'
+
+Outputs:
+  BucketWebsiteURL:
+    Description: 'S3 Website URL'
+    Value: !GetAtt FrontendBucket.WebsiteURL
+    Export:
+      Name: !Sub '${AWS::StackName}-WebsiteURL'
+  
+  DynamoDBTable:
+    Description: 'DynamoDB Table Name'
+    Value: !Ref ExpenseTable
+    Export:
+      Name: !Sub '${AWS::StackName}-TableName'
+      
+  SNSTopicArn:
+    Description: 'SNS Topic ARN'
+    Value: !Ref ExpenseNotificationsTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-SNSArn'
