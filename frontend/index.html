@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Expense Management Platform - AWS Cloud</title>
+    <link rel="stylesheet" href="index.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- Top Banner -->
+    <div class="top-banner">
+        <div class="banner-content">
+            <div class="logo-section">
+                <div class="logo">
+                    <span>💼</span> ExpenseFlow Pro
+                </div>
+                <div class="subtitle">
+                    Enterprise Cloud Management Platform
+                </div>
+            </div>
+            <div class="quick-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="headerTotalSpent">₹0</div>
+                    <div class="stat-label">Total Spent</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="headerTransactions">0</div>
+                    <div class="stat-label">Transactions</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="headerBudget">-</div>
+                    <div class="stat-label">Budget Status</div>
+                </div>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="nav-item active" onclick="switchTab('dashboard')">
+            <span>📊</span> <span class="nav-text">Dashboard</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('expenses')">
+            <span>💰</span> <span class="nav-text">Expenses</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('analytics')">
+            <span>📈</span> <span class="nav-text">Analytics</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('budgets')">
+            <span>🎯</span> <span class="nav-text">Budgets</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('reports')">
+            <span>📄</span> <span class="nav-text">Reports</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('settings')">
+            <span>⚙️</span> <span class="nav-text">Settings</span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="container">
+            <!-- API Configuration Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🔗 AWS Backend Configuration</h2>
+                    <span class="badge badge-primary" id="connectionBadge">Disconnected</span>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>API Gateway Endpoint</label>
+                        <input type="text" id="apiUrl" placeholder="https://your-api-id.execute-api.region.amazonaws.com/prod">
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button class="btn btn-primary" onclick="saveApiUrl()">
+                            🚀 Connect to AWS
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <div id="dashboardTab" class="tab-content active">
+                <!-- KPI Cards -->
+                <div class="dashboard-grid">
+                    <div class="kpi-card primary">
+                        <div class="kpi-header">
+                            <div class="kpi-icon">💰</div>
+                        </div>
+                        <div class="kpi-value" id="totalSpent">₹0</div>
+                        <div class="kpi-label">Total Spent This Month</div>
+                        <div class="kpi-trend trend-up">
+                            <span>↑</span> <span>12.5% vs last month</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card success">
+                        <div class="kpi-header">
+                            <div class="kpi-icon">📊</div>
+                        </div>
+                        <div class="kpi-value" id="totalTransactions">0</div>
+                        <div class="kpi-label">Total Transactions</div>
+                        <div class="kpi-trend trend-up">
+                            <span>↑</span> <span>8 new today</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card warning">
+                        <div class="kpi-header">
+                            <div class="kpi-icon">📅</div>
+                        </div>
+                        <div class="kpi-value" id="avgDaily">₹0</div>
+                        <div class="kpi-label">Average Daily Spend</div>
+                        <div class="kpi-trend trend-down">
+                            <span>↓</span> <span>5.2% reduction</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card danger">
+                        <div class="kpi-header">
+                            <div class="kpi-icon">🎯</div>
+                        </div>
+                        <div class="kpi-value" id="budgetRemaining">₹0</div>
+                        <div class="kpi-label">Budget Remaining</div>
+                        <div class="kpi-trend">
+                            <span id="budgetProgress">0%</span> <span>utilized</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">📊 Spending by Category</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">📈 Monthly Trend</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">⚡ Quick Actions</h3>
+                    </div>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="openAddExpenseModal()">
+                            ➕ Add Expense
+                        </button>
+                        <button class="btn btn-success" onclick="loadData()">
+                            🔄 Refresh Data
+                        </button>
+                        <button class="btn btn-outline" onclick="exportToPDF()">
+                            📄 Export PDF
+                        </button>
+                        <button class="btn btn-outline" onclick="openBudgetModal()">
+                            🎯 Set Budget
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expenses Tab -->
+            <div id="expensesTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">💰 Expense Management</h2>
+                        <div class="card-actions">
+                            <button class="btn btn-primary" onclick="openAddExpenseModal()">
+                                ➕ Add New
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="filter-bar">
+                        <div class="search-box">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="searchExpense" placeholder="Search expenses..." onkeyup="filterExpenses()">
+                        </div>
+                        <select id="filterCategory" onchange="filterExpenses()">
+                            <option value="">All Categories</option>
+                            <option value="food">Food</option>
+                            <option value="transport">Transport</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="utilities">Utilities</option>
+                            <option value="shopping">Shopping</option>
+                            <option value="healthcare">Healthcare</option>
+                            <option value="education">Education</option>
+                        </select>
+                        <select id="filterDepartment" onchange="filterExpenses()">
+                            <option value="">All Departments</option>
+                            <option value="sales">Sales</option>
+                            <option value="marketing">Marketing</option>
+                            <option value="it">IT</option>
+                            <option value="hr">HR</option>
+                        </select>
+                    </div>
+
+                    <!-- Expenses Table -->
+                    <div style="overflow-x: auto;">
+                        <table class="expense-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th>Department</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expensesTableBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div id="analyticsTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">📈 Advanced Analytics</h2>
+                    </div>
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="advancedChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Budgets Tab -->
+            <div id="budgetsTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">🎯 Budget Overview</h2>
+                        <button class="btn btn-primary" onclick="openBudgetModal()">
+                            ➕ Set New Budget
+                        </button>
+                    </div>
+                    <div id="budgetsList"></div>
+                </div>
+            </div>
+
+            <!-- Reports Tab -->
+            <div id="reportsTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">📄 Reports & Export</h2>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <button class="btn btn-outline" onclick="generateReport('monthly')">
+                            📊 Monthly Report
+                        </button>
+                        <button class="btn btn-outline" onclick="generateReport('quarterly')">
+                            📈 Quarterly Report
+                        </button>
+                        <button class="btn btn-outline" onclick="generateReport('annual')">
+                            📅 Annual Report
+                        </button>
+                        <button class="btn btn-outline" onclick="exportToPDF()">
+                            📄 Export to PDF
+                        </button>
+                        <button class="btn btn-outline" onclick="exportToCSV()">
+                            📊 Export to CSV
+                        </button>
+                        <button class="btn btn-outline" onclick="exportToExcel()">
+                            📗 Export to Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settingsTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">⚙️ System Settings</h2>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Default Currency</label>
+                            <select id="currency">
+                                <option value="INR">₹ Indian Rupee (INR)</option>
+                                <option value="USD">$ US Dollar (USD)</option>
+                                <option value="EUR">€ Euro (EUR)</option>
+                                <option value="GBP">£ British Pound (GBP)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Notification Preferences</label>
+                            <select id="notifications">
+                                <option value="all">All Notifications</option>
+                                <option value="important">Important Only</option>
+                                <option value="none">None</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Data Sync Frequency</label>
+                            <select id="syncFrequency">
+                                <option value="realtime">Real-time</option>
+                                <option value="5min">Every 5 minutes</option>
+                                <option value="15min">Every 15 minutes</option>
+                                <option value="manual">Manual</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary">💾 Save Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div class="modal" id="addExpenseModal">
+        <div class="modal-content">
+            <div class="card-header">
+                <h2 class="card-title">➕ Add New Expense</h2>
+                <button class="btn btn-outline" onclick="closeModal('addExpenseModal')" style="padding: 8px 16px;">✕</button>
+            </div>
+            <form id="expenseForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Amount *</label>
+                        <input type="number" id="amount" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Category *</label>
+                        <select id="category" required>
+                            <option value="">Select Category</option>
+                            <option value="food">🍕 Food & Dining</option>
+                            <option value="transport">🚗 Transportation</option>
+                            <option value="entertainment">🎬 Entertainment</option>
+                            <option value="utilities">💡 Utilities</option>
+                            <option value="shopping">🛒 Shopping</option>
+                            <option value="healthcare">🏥 Healthcare</option>
+                            <option value="education">📚 Education</option>
+                            <option value="other">📦 Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <select id="department">
+                            <option value="sales">Sales</option>
+                            <option value="marketing">Marketing</option>
+                            <option value="it">IT</option>
+                            <option value="hr">HR</option>
+                            <option value="operations">Operations</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date *</label>
+                        <input type="date" id="date" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description *</label>
+                    <textarea id="description" required rows="3"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary">
+                        💾 Save Expense
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="closeModal('addExpenseModal')">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let API_BASE_URL = '';
+        const USER_ID = 'test-user';
+        let allExpenses = [];
+        let charts = {};
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            const saved = localStorage.getItem('expenseTrackerApiUrl');
+            if (saved) {
+                API_BASE_URL = saved;
+                document.getElementById('apiUrl').value = saved;
+                loadData();
+            }
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            initCharts();
+        });
+
+        function saveApiUrl() {
+            const url = document.getElementById('apiUrl').value.trim();
+            if (!url) {
+                showNotification('error', '❌ Please enter a valid API URL');
+                return;
+            }
+            API_BASE_URL = url.replace(/\/$/, '');
+            localStorage.setItem('expenseTrackerApiUrl', API_BASE_URL);
+            showNotification('success', '✅ Connected to AWS successfully!');
+            document.getElementById('connectionBadge').className = 'badge badge-success';
+            document.getElementById('connectionBadge').textContent = 'Connected';
+            loadData();
+        }
+
+        function switchTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tab + 'Tab').classList.add('active');
+            event.target.closest('.nav-item').classList.add('active');
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+async function loadData() {
+    if (!API_BASE_URL) {
+        showNotification('error', '⚠️ Please configure API URL first');
+        return;
+    }
+    
+    console.log('🔄 Loading expenses from:', `${API_BASE_URL}/expenses?userId=${USER_ID}`);
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/expenses?userId=${USER_ID}`);
+        const responseText = await response.text();
+        
+        console.log('📥 Load data response status:', response.status);
+        console.log('📥 Load data response text:', responseText);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${responseText}`);
+        }
+        
+        const responseData = JSON.parse(responseText);
+        console.log('📊 Parsed response data:', responseData);
+        
+        // Handle Lambda response wrapper
+        let data;
+        if (responseData.statusCode && responseData.body) {
+            data = JSON.parse(responseData.body);
+        } else {
+            data = responseData;
+        }
+        
+        console.log('📊 Final data:', data);
+        
+        // Ensure expenses array exists
+        allExpenses = data.expenses || data.items || [];
+        console.log('📊 All expenses count:', allExpenses.length);
+        
+        // Update dashboard with fallback values
+        const totalSpent = data.totalSpent || data.total || allExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+        const count = data.count || allExpenses.length;
+        
+        updateDashboard({
+            totalSpent: totalSpent,
+            count: count,
+            expenses: allExpenses
+        });
+        
+        updateExpensesTable();
+        loadInsights();
+        
+        showNotification('success', `✅ Loaded ${count} expenses`);
+        
+    } catch (error) {
+        console.error('🔴 Error loading data:', error);
+        showNotification('error', '❌ Error loading data: ' + error.message);
+    }
+}
+
+
+        function updateDashboard(data) {
+            document.getElementById('totalSpent').textContent = `₹${(data.totalSpent || 0).toFixed(2)}`;
+            document.getElementById('totalTransactions').textContent = data.count || 0;
+            document.getElementById('avgDaily').textContent = `₹${((data.totalSpent || 0) / 30).toFixed(2)}`;
+            document.getElementById('budgetRemaining').textContent = `₹${(10000 - (data.totalSpent || 0)).toFixed(2)}`;
+            
+            // Update header stats
+            document.getElementById('headerTotalSpent').textContent = `₹${(data.totalSpent || 0).toFixed(2)}`;
+            document.getElementById('headerTransactions').textContent = data.count || 0;
+            document.getElementById('headerBudget').textContent = `${((data.totalSpent / 10000) * 100).toFixed(0)}%`;
+        }
+
+function updateExpensesTable() {
+    const tbody = document.getElementById('expensesTableBody');
+    
+    console.log('📋 Updating table with expenses:', allExpenses.length);
+    
+    if (!allExpenses || allExpenses.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                    <div>📭 No expenses found</div>
+                    <div style="margin-top: 10px; font-size: 0.9rem;">Add your first expense to get started!</div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = allExpenses.map(exp => `
+        <tr id="expense-row-${exp.expenseId}">
+            <td>${exp.date || 'N/A'}</td>
+            <td>${exp.description || 'No description'}</td>
+            <td><span class="badge badge-primary">${(exp.category || 'other').toUpperCase()}</span></td>
+            <td><span class="badge badge-success">${exp.department || 'General'}</span></td>
+            <td><strong>₹${parseFloat(exp.amount || 0).toFixed(2)}</strong></td>
+            <td><span class="badge badge-success">✓ Approved</span></td>
+            <td style="display: flex; gap: 5px;">
+                <button class="btn btn-outline" style="padding: 5px 10px; font-size: 0.85rem;" onclick="editExpense('${exp.expenseId}')">
+                    ✏️ Edit
+                </button>
+                <button class="btn btn-outline" style="padding: 5px 10px; font-size: 0.85rem; color: var(--danger); border-color: var(--danger);" onclick="deleteExpense('${exp.expenseId}', '${exp.userId}')">
+                    🗑️ Delete
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+
+
+        async function loadInsights() {
+            if (!API_BASE_URL) return;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/insights?userId=${USER_ID}`);
+                const responseText = await response.text();
+                const responseData = JSON.parse(responseText);
+                let data = responseData.statusCode ? JSON.parse(responseData.body) : responseData;
+                
+                updateCharts(data);
+            } catch (error) {
+                console.error('Error loading insights:', error);
+            }
+        }
+
+        function initCharts() {
+            // Category Pie Chart
+            const ctx1 = document.getElementById('categoryChart');
+            if (ctx1) {
+                charts.category = new Chart(ctx1, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Food', 'Transport', 'Entertainment', 'Utilities', 'Shopping'],
+                        datasets: [{
+                            data: [0, 0, 0, 0, 0],
+                            backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Trend Line Chart
+            const ctx2 = document.getElementById('trendChart');
+            if (ctx2) {
+                charts.trend = new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                        datasets: [{
+                            label: 'Weekly Spending',
+                            data: [0, 0, 0, 0],
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function updateCharts(data) {
+            if (charts.category && data.categoryBreakdown) {
+                const categories = Object.keys(data.categoryBreakdown);
+                const values = Object.values(data.categoryBreakdown);
+                charts.category.data.labels = categories;
+                charts.category.data.datasets[0].data = values;
+                charts.category.update();
+            }
+        }
+
+        function openAddExpenseModal() {
+            document.getElementById('addExpenseModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function openBudgetModal() {
+            showNotification('info', '🎯 Budget management coming soon!');
+        }
+
+// Place this around line 1150, replacing the existing expenseForm.onsubmit
+document.getElementById('expenseForm').onsubmit = async function(e) {
+    e.preventDefault();
+    
+    if (!API_BASE_URL) {
+        showNotification('error', '❌ Please configure API URL first');
+        return;
+    }
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loading-spinner"></span> Adding...';
+    
+    const expense = {
+        userId: USER_ID,
+        amount: parseFloat(document.getElementById('amount').value),
+        category: document.getElementById('category').value,
+        description: document.getElementById('description').value,
+        date: document.getElementById('date').value
+    };
+    
+    console.log('📤 Sending expense to API:', expense);
+    console.log('📍 API URL:', `${API_BASE_URL}/expenses`);
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/expenses`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(expense)
+        });
+        
+        const responseText = await response.text();
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response text:', responseText);
+        
+        if (response.ok) {
+            showNotification('success', '✅ Expense added successfully to AWS DynamoDB!');
+            closeModal('addExpenseModal');
+            document.getElementById('expenseForm').reset();
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            
+            // Reload data after short delay
+             loadData();
+        } else {
+            const errorMsg = responseText.length > 100 ? responseText.substring(0, 100) + '...' : responseText;
+            showNotification('error', `❌ Error ${response.status}: ${errorMsg}`);
+        }
+    } catch (error) {
+        showNotification('error', '❌ Network error: ' + error.message);
+        console.error('🔴 Full error:', error);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+};
+async function deleteExpense(expenseId, userId) {
+    // Confirm before deleting
+    if (!confirm('Are you sure you want to delete this expense?')) {
+        return;
+    }
+    
+    if (!API_BASE_URL) {
+        showNotification('error', '❌ Please configure API URL first');
+        return;
+    }
+    
+    console.log('🗑️ Deleting expense:', expenseId);
+    
+    // Show deleting animation
+    const row = document.getElementById(`expense-row-${expenseId}`);
+    if (row) {
+        row.style.opacity = '0.5';
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/expenses/${expenseId}?userId=${userId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        });
+        
+        const responseText = await response.text();
+        console.log('📥 Delete response:', responseText);
+        
+        if (response.ok) {
+            showNotification('success', '✅ Expense deleted successfully!');
+            
+            // Remove from local array
+            allExpenses = allExpenses.filter(exp => exp.expenseId !== expenseId);
+            
+            // Update UI
+            updateExpensesTable();
+            updateDashboard({
+                totalSpent: allExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0),
+                count: allExpenses.length,
+                expenses: allExpenses
+            });
+            loadInsights();
+            
+        } else {
+            showNotification('error', '❌ Error deleting expense: ' + responseText);
+            if (row) row.style.opacity = '1';
+        }
+        
+    } catch (error) {
+        showNotification('error', '❌ Network error: ' + error.message);
+        console.error('🔴 Delete error:', error);
+        if (row) row.style.opacity = '1';
+    }
+}
+function editExpense(expenseId) {
+    showNotification('info', '✏️ Edit functionality coming soon!');
+    console.log('Edit expense:', expenseId);
+    
+    // TODO: You can implement edit modal later
+    // For now, just show a message
+}
+
+
+
+        function filterExpenses() {
+            const search = document.getElementById('searchExpense').value.toLowerCase();
+            const category = document.getElementById('filterCategory').value;
+            const department = document.getElementById('filterDepartment').value;
+            
+            const filtered = allExpenses.filter(exp => {
+                const matchSearch = exp.description.toLowerCase().includes(search);
+                const matchCategory = !category || exp.category === category;
+                const matchDepartment = !department || exp.department === department;
+                return matchSearch && matchCategory && matchDepartment;
+            });
+            
+            // Update table with filtered results
+            const tbody = document.getElementById('expensesTableBody');
+            tbody.innerHTML = filtered.map(exp => `
+                <tr>
+                    <td>${exp.date}</td>
+                    <td>${exp.description}</td>
+                    <td><span class="badge badge-primary">${exp.category}</span></td>
+                    <td><span class="badge badge-success">${exp.department || 'General'}</span></td>
+                    <td><strong>₹${parseFloat(exp.amount).toFixed(2)}</strong></td>
+                    <td><span class="badge badge-success">Approved</span></td>
+                    <td>
+                        <button class="btn btn-outline" style="padding: 5px 10px; font-size: 0.85rem;">Edit</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function exportToPDF() {
+            showNotification('info', '📄 Generating PDF report...');
+            setTimeout(() => {
+                showNotification('success', '✅ PDF exported successfully!');
+            }, 2000);
+        }
+
+        function exportToCSV() {
+            showNotification('info', '📊 Exporting to CSV...');
+        }
+
+        function exportToExcel() {
+            showNotification('info', '📗 Exporting to Excel...');
+        }
+
+        function generateReport(type) {
+            showNotification('info', `📊 Generating ${type} report...`);
+        }
+
+        function showNotification(type, message) {
+            const notification = document.createElement('div');
+            notification.className = `notification status ${type}`;
+            notification.innerHTML = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.5s ease';
+                setTimeout(() => notification.remove(), 500);
+            }, 3000);
+        }
+    </script>
+
+    <script src="index.js"></script>
+</body>
+</html>
